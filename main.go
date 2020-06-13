@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/csv"
+	"strings"
+
 	//"github.com/fatih/color"
 	"log"
 	"os"
@@ -14,6 +16,26 @@ type Buy struct {
 	Sid  string
 	Uid  string
 	Time time.Time
+}
+
+func uniqueArray(arr []string) []string {
+	if arr == nil {
+		return nil
+	}
+	mp := make(map[string]bool)
+	var result []string
+	for _, v := range arr {
+		if !mp[v] {
+			result = append(result, v)
+		}
+		mp[v] = true
+	}
+	sort.Strings(result)
+	return result
+}
+
+func handle(err error) {
+	panic(err)
 }
 
 func main() {
@@ -43,10 +65,13 @@ func main() {
 			Uid:  v[2],
 			Time: t,
 		}
+		result[v[1]] = nil
 		mp[v[1]] = append(mp[v[1]], buy)
 	}
 
 	for sid, event := range mp {
+
+		//if sid != "145777302" {continue}
 		//color.Red(sid)
 		var queue []Buy
 		for _, e := range event {
@@ -59,7 +84,7 @@ func main() {
 			}
 			queue = append(queue, e)
 			//for _, r := range queue {
-			//color.Green(r.Time.String())
+			//color.Cyan(r.Time.String())
 			//}
 
 			orderNumber := len(queue)
@@ -80,19 +105,35 @@ func main() {
 				for uid, btime := range buyer {
 					if btime == maximum {
 						result[sid] = append(result[sid], uid)
-					}	
+					}
 				}
 			}
+			//color.Green("rate %v, order: %v, buyer: %v", rate, orderNumber, uniqueBuyer)
 		}
 
 	}
 	number := 0
-	for _, r := range result {
-		if r != nil && len(r) != 0 {
-			number++
+	output, _ := os.Create("result.csv")
+	writer := csv.NewWriter(output)
+	defer output.Close()
+	var err error
+	for sid, r := range result {
+		r = uniqueArray(r)
+
+		//color.Blue("%v",r)
+		if len(r) > 0 {
+			err = writer.Write([]string{sid, strings.Join(r, "&")})
+		} else {
+			err = writer.Write([]string{sid, "0"})
 		}
+		if err != nil {
+			log.Println(sid, r)
+			panic(err)
+		}
+		//if r != nil && len(r) != 0 {
+		//		//	number++
+		//		//}
 	}
-	log.Println("ABC")
 	log.Println(number)
 
 }
