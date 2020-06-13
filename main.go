@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/csv"
+	"github.com/fatih/color"
+	"strconv"
 	"strings"
 
 	//"github.com/fatih/color"
@@ -30,12 +32,12 @@ func uniqueArray(arr []string) []string {
 		}
 		mp[v] = true
 	}
-	sort.Strings(result)
+	sort.Slice(arr, func(i, j int) bool {
+		a, _ := strconv.Atoi(arr[i])
+		b, _ := strconv.Atoi(arr[j])
+		return a < b
+	})
 	return result
-}
-
-func handle(err error) {
-	panic(err)
 }
 
 func main() {
@@ -44,6 +46,7 @@ func main() {
 
 	file, _ := os.Open("order_brush_order.csv")
 	data, _ := csv.NewReader(file).ReadAll()
+	file.Close()
 	data = data[1:]
 
 	sort.Slice(data, func(i, j int) bool {
@@ -115,25 +118,24 @@ func main() {
 	number := 0
 	output, _ := os.Create("result.csv")
 	writer := csv.NewWriter(output)
-	defer output.Close()
+	//defer output.Close()
+	writer.Write([]string{"shopid", "userid"})
 	var err error
+	log.Println(len(result))
 	for sid, r := range result {
 		r = uniqueArray(r)
-
-		//color.Blue("%v",r)
-		if len(r) > 0 {
+		if r != nil && len(r) > 0 {
 			err = writer.Write([]string{sid, strings.Join(r, "&")})
+			number++
 		} else {
 			err = writer.Write([]string{sid, "0"})
 		}
 		if err != nil {
 			log.Println(sid, r)
-			panic(err)
+			log.Fatalln(err)
 		}
-		//if r != nil && len(r) != 0 {
-		//		//	number++
-		//		//}
 	}
-	log.Println(number)
-
+	writer.Flush()
+	output.Close()
+	color.Red("Total cheated shop : %v", number)
 }
